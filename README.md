@@ -4,7 +4,7 @@
 
 A small, local-first Python incident ledger with a JSON CLI and installable skills for **Hermes Agent** and **OpenClaw**. MIT licensed. Python 3.9+. No runtime dependencies or API keys required.
 
-> **Early prototype, not an autonomous repair system.** Skills guide the agent to use the ledger. They do not intercept every turn or enforce host completion. Evidence entries are attestations supplied by the operator/agent, not independently verified facts. No promise of zero recurrence.
+> **Early prototype, not an autonomous repair system.** The Hermes native plugin observes exhausted API errors and failed tool results with trusted session IDs, and injects a scoped reminder on the next turn. The skills guide manual ledger use. Neither integration enforces completion or verifies evidence independently. No promise of zero recurrence.
 
 ## Install
 
@@ -24,6 +24,17 @@ uv tool install 'git+https://github.com/seojoonkim/agent-incident-lab.git@v0.1.0
 You need Python, Git, and either pipx or uv. Do not run both installation methods.
 
 ## Hermes Agent
+
+Native automatic observation (recommended):
+
+```sh
+hermes plugins install seojoonkim/agent-incident-lab --ref RELEASE_COMMIT_SHA --enable
+hermes plugins doctor incidentlab --ci
+```
+
+Use the immutable commit shown in the latest release rather than a branch. The plugin stores only sanitized failure classes, task/session IDs, counts, and timestamps in profile-owned plugin state. It does not store prompts, tool arguments/results, URLs, keys, or provider error messages. Intermediate retry failures and events without a session ID are ignored. Start a new session or restart the gateway only when it can be done without interrupting work.
+
+Manual workflow skill:
 
 ```sh
 incidentlab-install hermes
@@ -45,7 +56,7 @@ incidentlab-install openclaw
 
 Creates `~/.openclaw/skills/incidentlab/SKILL.md`. For a custom state home use `--home /path/to/home`. Start a fresh session and ask the agent to load the `incidentlab` skill. Workspace overrides and host skill allowlists can affect discovery.
 
-**Both integrations are skills, not native plugin packages.** Do not use `openclaw plugins install` for this repository. Python and the installed environment must be accessible on the host executing commands; sandbox/container users must install inside that environment. The installer binds the skill to the installed Python executable, avoiding reliance on the gateway's PATH. Reinstall the skill if that environment moves.
+The OpenClaw integration is a skill, not a native OpenClaw plugin. Do not use `openclaw plugins install` for this repository. Automatic observation is currently Hermes-only. Python and the installed environment must be accessible on the host executing commands; sandbox/container users must install inside that environment. The installer binds the skill to the installed Python executable, avoiding reliance on the gateway's PATH. Reinstall the skill if that environment moves.
 
 Installer scope: only writes the named skill. It never changes approval policy, restarts gateways, or modifies sibling profiles. Repeated identical installation is a no-op; different existing content is preserved and installation fails with a clear error. Back up/remove the existing skill yourself when intentionally replacing it. Uninstall by removing only the `skills/incidentlab` folder and uninstalling the package; incident databases are retained.
 
@@ -96,6 +107,7 @@ finally:
 | Separate recovery and prevention gates | Yes |
 | Hermes/OpenClaw skill file installer | Yes |
 | Host skill directory installation tests | Yes, isolated homes |
+| Hermes native exhausted-API/tool-failure observation | Yes, profile plugin state |
 | Live end-to-end model behavior in both hosts | Not certified |
 | Automatic detection / mandatory stop hook | No |
 | Running tests and authenticating receipts | No |

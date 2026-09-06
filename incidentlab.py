@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import sqlite3
+import os
 import uuid
 from pathlib import Path
 
@@ -17,6 +18,13 @@ class Store:
     def __init__(self, path):
         path=Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
+        if path.is_symlink():
+            raise ValueError('database symlinks are not supported')
+        fd = os.open(path, os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+        try:
+            if os.name == 'posix': os.fchmod(fd, 0o600)
+        finally:
+            os.close(fd)
         self.db=sqlite3.connect(path)
         self.db.row_factory=sqlite3.Row
         self.db.executescript('''

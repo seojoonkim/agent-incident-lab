@@ -30,6 +30,9 @@ class Contracts(unittest.TestCase):
         with self.assertRaises(ValueError): self.s.attest(a,'unknown','receipt')
         with self.assertRaises(ValueError): self.s.attest(a,'green','')
         with self.assertRaises(ValueError): self.s.record('','task','failure','source')
+    @unittest.skipUnless(__import__('os').name == 'posix', 'POSIX modes')
+    def test_database_private(self):
+        self.assertEqual(self.db.stat().st_mode & 0o777, 0o600)
     def test_persistence(self):
         a=self.s.record('scope','task','failure','source')
         other=Store(self.db)
